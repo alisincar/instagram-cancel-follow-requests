@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Unfollow Manager (Sequential & Control)",
+  "version": "2.1",
+  "description": "Unfollow işlemlerini tek tek sıralı olarak yönetir.",
+  "permissions": [
+    "scripting",
+    "tabs",
+    "storage",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Unfollow Manager"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Unfollow Manager</title>
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(to bottom right, #f5f3ff, #fdf2f8);
+      color: var(--gray-800);
+      line-height: 1.5;
+      padding: 1.5rem;
+      min-height: 100vh;
+      min-width: 400px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    #progress {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    #log {
+      height: 200px;
+      overflow-y: auto;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+
+    #settings {
+      margin-top: 1.5rem;
+    }
+
+    .input-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: var(--gray-700);
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      transition: border-color 0.15s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    #stopButton {
+      background: #ef4444;
+    }
+
+    #stopButton:hover {
+      background: #dc2626;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .footer {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+
+    .footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    h2, h3 {
+      color: var(--gray-800);
+      margin-bottom: 1rem;
+    }
+
+    /* Custom scrollbar */
+    #log::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #log::-webkit-scrollbar-track {
+      background: var(--gray-100);
+      border-radius: 3px;
+    }
+
+    #log::-webkit-scrollbar-thumb {
+      background: var(--gray-200);
+      border-radius: 3px;
+    }
+
+    #log::-webkit-scrollbar-thumb:hover {
+      background: var(--gray-700);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div id="header">
+      <h2>Progress: <span id="progress">0/0</span></h2>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="log-container">
+      <h3>Logs</h3>
+      <div id="log"></div>
+    </div>
+    <div class="button-group">
+      <button id="startButton">Start Batch</button>
+      <button id="stopButton" style="display: none;">Stop</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="settings">
+      <h3>Settings (Customize Button Texts)</h3>
+      <div class="input-group">
+        <label for="requestText">Request Button:</label>
+        <input type="text" id="requestText" placeholder="İstek Gönderildi">
+      </div>
+      <div class="input-group">
+        <label for="followText">Follow Button:</label>
+        <input type="text" id="followText" placeholder="Takip Et">
+      </div>
+      <div class="input-group">
+        <label for="unfollowText">Unfollow Button:</label>
+        <input type="text" id="unfollowText" placeholder="Takibi Bırak">
+      </div>
+      <button id="saveSettings">Save Settings</button>
+    </div>
+  </div>
+
+
+
+  <div class="footer">
+    <a href="https://github.com/alisincar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+      </svg>
+      GitHub
+    </a>
+    <a href="https://linkedin.com/in/alisincar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+        <rect x="2" y="9" width="4" height="12"></rect>
+        <circle cx="4" cy="4" r="2"></circle>
+      </svg>
+      LinkedIn
+    </a>
+  </div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
