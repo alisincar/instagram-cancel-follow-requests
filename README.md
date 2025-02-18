@@ -24,15 +24,23 @@
     - Open Chrome and navigate to `chrome://extensions`.
     - Enable **Developer mode** in the top-right corner.
     - Click on **Load unpacked** and select the project folder.
+  
+      
+3. **Download Instagram User Data**
+   - Request to download your information from the Download Account Information page.
+   - Once your information is received, unzip the file
+   - Open the followers_and_following folder in the connections folder
+   - Open the file named pending_follow_requests.html with the chrome browser
 
 ## Usage
 
-1. Click the extension icon in the Chrome toolbar to open the popup interface.
-2. Configure the button texts and settings in the popup, then click **Save Settings**.
-3. Click **Start Batch** to capture the active tab's HTML and begin processing URLs in batches.
-4. As the unfollow operations are processed (across multiple tabs), you will see live log updates and progress reports.
-5. Once a batch completes, the next batch will automatically start after a short delay.
-6. To stop the process at any time, click **Stop**.
+1. Open the pending_follow_requests.html page in the Chrome browser.   
+2. Click the extension icon in the Chrome toolbar to open the popup interface.
+3. Configure the button texts and settings in the popup, then click **Save Settings**.
+4. Click **Start Batch** to capture the active tab's HTML and begin processing URLs in batches.
+5. As the unfollow operations are processed (across multiple tabs), you will see live log updates and progress reports.
+6. Once a batch completes, the next batch will automatically start after a short delay.
+7. To stop the process at any time, click **Stop**.
 
 ## File Structure
 
