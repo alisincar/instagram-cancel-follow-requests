@@ -27,7 +27,7 @@
         if (msg.action === "batchFinished") {
             // Batch tamamlandığında 2 saniye bekleyip bir sonraki batch'i başlat.
             addLogLine("Batch complete. Starting next batch in 2 seconds...");
-            setTimeout(startNextBatch, 2000);
+            setTimeout(startNextBatch, 1000);
         }
     });
 
@@ -65,7 +65,7 @@
                 target: { tabId: activeTab.id },
                 func: function() {
                     // Belirtilen CSS seçiciye uyan bağlantıları topluyoruz.
-                    var hrefs = document.querySelectorAll("div._a706 > div > div > div > div:nth-child(1) > a");
+                    var hrefs = document.querySelectorAll("div._a6-p > div > div:nth-child(1) > a");
                     // localStorage'den startIndex değerini alıyoruz; yoksa toplam uzunluk.
                     let startIndex = parseInt(localStorage.getItem('startIndex')) || hrefs.length;
                     let nextIndex = startIndex - 20;

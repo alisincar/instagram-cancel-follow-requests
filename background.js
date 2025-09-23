@@ -82,7 +82,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 if (processedCount < batchSize) {
                     processNextReady();
                 } else {
-                    addLog("Batch processing complete.");
+                    addLog("processedCount:"+processedCount+" , batchSize:"+batchSize+" Batch processing complete.");
                     if (popupPort) {
                         popupPort.postMessage({ action: "batchFinished" });
                     }

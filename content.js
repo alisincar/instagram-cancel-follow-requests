@@ -35,7 +35,7 @@
                 log(`Button "${buttonText}" found. Clicking...`);
                 btn.click();
                 log(`Button "${buttonText}" clicked.`);
-                setTimeout(() => { if (callback) callback(); }, 500);
+                setTimeout(() => { if (callback) callback(); }, 1500);
             } else {
                 // Eğer request butonu aranıyorsa ve onun yerine follow butonu varsa,
                 // profil zaten unfollow edilmiş.
@@ -47,13 +47,15 @@
                         chrome.runtime.sendMessage({ action: "done" });
                         return;
                     }
+                }else{
+                    return;
                 }
                 let now = Date.now();
                 if (now - lastLogTime >= 2000) {
                     log(`Button "${buttonText}" not found, retrying...`);
                     lastLogTime = now;
                 }
-                setTimeout(poll, 500);
+                setTimeout(poll, 1000);
             }
         }
         poll();
