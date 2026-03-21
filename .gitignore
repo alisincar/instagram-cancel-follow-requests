@@ -1,0 +1,7 @@
+./idea
+./release
+./node_modules
+./_MACOSX
+./.DS_Store
+./.env
+./.env.production
