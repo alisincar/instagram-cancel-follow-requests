@@ -1,13 +1,21 @@
 {
   "manifest_version": 3,
   "name": "Unfollow Manager (Sequential & Control)",
-  "version": "2.1",
+  "version": "2.2.0",
   "description": "Unfollow işlemlerini tek tek sıralı olarak yönetir.",
   "permissions": [
     "scripting",
     "tabs",
     "storage",
+    "alarms",
     "activeTab"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
+  "host_permissions": [
+    "https://instagram.com/*",
+    "https://*.instagram.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -18,7 +26,10 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "https://instagram.com/*",
+        "https://*.instagram.com/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }

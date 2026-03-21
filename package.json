@@ -1,10 +1,11 @@
 {
   "name": "instagram-cancel-follow-requests",
-  "version": "1.0.0",
-  "description": "",
+  "version": "2.2.0",
+  "description": "Chrome extension to cancel pending Instagram follow requests sequentially.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package:cws": "VERSION=$(node -p \"require('./manifest.json').version\") && mkdir -p release && rm -f \"release/unfollow-manager-${VERSION}-chrome-web-store.zip\" && zip -r \"release/unfollow-manager-${VERSION}-chrome-web-store.zip\" manifest.json background.js content.js popup.html popup.js"
   },
   "private": true
 }
