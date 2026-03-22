@@ -412,7 +412,7 @@ function sanitizeRuntimeState(rawState) {
     currentProcessingStep: PROCESSING_STEPS.has(rawState?.currentProcessingStep) ? rawState.currentProcessingStep : "idle",
     currentStepUpdatedAt: Number.isFinite(rawState?.currentStepUpdatedAt) ? rawState.currentStepUpdatedAt : 0,
     isWaitingForUser: Boolean(rawState?.isWaitingForUser),
-    waitingReason: ["tabDelay", "clickDelay", "sleep", "cadencePause"].includes(rawState?.waitingReason) ? rawState.waitingReason : null,
+    waitingReason: ["tabDelay", "uiReady", "clickDelay", "sleep", "cadencePause"].includes(rawState?.waitingReason) ? rawState.waitingReason : null,
     waitingUntil: Number.isFinite(rawState?.waitingUntil) ? rawState.waitingUntil : 0,
     blockedUrl: normalizeProfileUrl(rawState?.blockedUrl),
     blockedReason: typeof rawState?.blockedReason === "string" ? rawState.blockedReason : null,
@@ -853,6 +853,10 @@ async function scheduleClickDelay(readySignal = {}) {
   await setWaitingState("clickDelay", waitMs);
 }
 
+async function scheduleUiReadyProbe(delayMs = 900) {
+  await setWaitingState("uiReady", clampNumber(delayMs, 350, 2000));
+}
+
 async function enterSleep(waitMinutes) {
   const waitMs = getAdaptiveSleepMs(waitMinutes);
   await addLog(`${t.rWait} (${formatDelayMs(waitMs)})`);
@@ -1190,6 +1194,12 @@ async function recoverRuntimeAfterWake() {
       await openCurrentProfile();
     } else if (reason === "tabDelay") {
       await openCurrentProfile();
+    } else if (reason === "uiReady") {
+      if (state.currentProcessingTab) {
+        await sendEnsureReady(state.currentProcessingTab);
+      } else {
+        await retryCurrentProfile("recovered_missing_ui_ready_tab", state.currentProcessingUrl);
+      }
     } else if (reason === "cadencePause") {
       await openCurrentProfile();
     } else if (reason === "clickDelay") {
@@ -1258,6 +1268,16 @@ chrome.alarms.onAlarm.addListener(alarm => {
 
       if (currentReason === "tabDelay") {
         await openCurrentProfile();
+        return;
+      }
+
+      if (currentReason === "uiReady") {
+        if (!state.currentProcessingTab) {
+          await retryCurrentProfile("missing_ui_ready_tab", state.currentProcessingUrl);
+          return;
+        }
+
+        await sendEnsureReady(state.currentProcessingTab);
         return;
       }
 
@@ -1340,7 +1360,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
       return;
     }
 
-    if (!state.waitingReason) {
+    if (!state.waitingReason || state.waitingReason === "uiReady") {
       await sendEnsureReady(tabId);
     }
   })();
@@ -1414,9 +1434,61 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         state.currentActionMode === "auto" &&
         sender.tab &&
         sender.tab.id === state.currentProcessingTab &&
-        state.waitingReason !== "clickDelay" &&
-        clickDelayScheduledTabId !== sender.tab.id
+        (!state.waitingReason || ["uiReady", "clickDelay"].includes(state.waitingReason))
       ) {
+        const readyUiState = msg.readySignal?.uiState;
+        const hasActionableUi = Boolean(
+          readyUiState?.requestVisible ||
+          readyUiState?.followVisible ||
+          readyUiState?.unfollowVisible
+        );
+        const shouldSkipAlreadyUnfollowed = Boolean(
+          msg.readySignal?.shouldSkipClickDelay ||
+          (
+            readyUiState?.followVisible &&
+            !readyUiState?.requestVisible &&
+            !readyUiState?.unfollowVisible
+          )
+        );
+
+        if (shouldSkipAlreadyUnfollowed) {
+          const resolvedUrl = normalizeProfileUrl(state.currentProcessingUrl || sender.tab.url);
+          const fallbackUsername = resolvedUrl ? resolvedUrl.split("/").pop() : null;
+
+          if (["uiReady", "clickDelay"].includes(state.waitingReason)) {
+            clickDelayScheduledTabId = null;
+            await clearWaitingState();
+          }
+
+          await updateCurrentProcessingStep("completed");
+          await moveToNextProfile("already_unfollowed", {
+            username: fallbackUsername,
+            profileUrl: resolvedUrl || sender.tab.url || null,
+            currentStatus: "takip_edilmiyor"
+          });
+          sendResponse({ ok: true });
+          return;
+        }
+
+        if (!hasActionableUi) {
+          if (!state.waitingReason) {
+            await updateCurrentProcessingStep("opening");
+            await scheduleUiReadyProbe();
+          }
+
+          sendResponse({ ok: true });
+          return;
+        }
+
+        if (state.waitingReason === "uiReady") {
+          await clearWaitingState();
+        }
+
+        if (state.waitingReason === "clickDelay" || clickDelayScheduledTabId === sender.tab.id) {
+          sendResponse({ ok: true });
+          return;
+        }
+
         clickDelayScheduledTabId = sender.tab.id;
         await updateCurrentProcessingStep("ready");
         await scheduleClickDelay(msg.readySignal || {});

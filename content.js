@@ -9,6 +9,9 @@
     let currentStep = "idle";
     let lastDonePayload = null;
     let cachedProfileInfo = null;
+    let readyDispatchSequence = 0;
+    let readyRefreshObserver = null;
+    let readyRefreshTimeoutId = null;
     const unavailableSnippets = [
         "bu sayfaya ulaşılamıyor",
         "page isn't available",
@@ -32,16 +35,92 @@
         chrome.runtime.sendMessage({ action: "log", message: message });
     }
 
+    async function buildReadySignal() {
+        const hasActionableUi = () => hasActionableUiState();
+
+        if (!hasActionableUi()) {
+            await waitForUiSignal(hasActionableUi, 2500);
+        }
+
+        return collectReadySignal();
+    }
+
+    function stopReadyRefreshObserver() {
+        if (readyRefreshObserver) {
+            readyRefreshObserver.disconnect();
+            readyRefreshObserver = null;
+        }
+
+        if (readyRefreshTimeoutId !== null) {
+            clearTimeout(readyRefreshTimeoutId);
+            readyRefreshTimeoutId = null;
+        }
+    }
+
+    function armReadyRefreshObserver() {
+        if (readyRefreshObserver || processingStarted || processingCompleted) {
+            return;
+        }
+
+        const root = document.documentElement || document.body;
+        if (!root) {
+            return;
+        }
+
+        const checkForActionableUi = () => {
+            if (processingStarted || processingCompleted) {
+                stopReadyRefreshObserver();
+                return;
+            }
+
+            if (!hasActionableUiState()) {
+                return;
+            }
+
+            stopReadyRefreshObserver();
+            notifyReady(true);
+        };
+
+        readyRefreshObserver = new MutationObserver(checkForActionableUi);
+        readyRefreshObserver.observe(root, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true
+        });
+
+        readyRefreshTimeoutId = setTimeout(() => {
+            stopReadyRefreshObserver();
+        }, 5000);
+
+        checkForActionableUi();
+    }
+
     function notifyReady(force = false) {
         if (readySent && !force) {
             return;
         }
 
         readySent = true;
-        chrome.runtime.sendMessage({
-            action: "ready",
-            readySignal: collectReadySignal()
-        });
+        const sequence = ++readyDispatchSequence;
+
+        void (async () => {
+            const readySignal = await buildReadySignal();
+            if (sequence !== readyDispatchSequence) {
+                return;
+            }
+
+            if (hasActionableUiState(readySignal.uiState)) {
+                stopReadyRefreshObserver();
+            } else if (!processingStarted && !processingCompleted) {
+                armReadyRefreshObserver();
+            }
+
+            chrome.runtime.sendMessage({
+                action: "ready",
+                readySignal
+            });
+        })();
     }
 
     function normalizeText(value) {
@@ -54,6 +133,16 @@
             .find(element => normalizeText(element.textContent) === targetText);
     }
 
+    function findButtonContainingText(buttonText) {
+        const targetText = normalizeText(buttonText);
+        if (!targetText) {
+            return null;
+        }
+
+        return Array.from(document.querySelectorAll('button, div[role="button"], span[role="button"], a[role="button"]'))
+            .find(element => normalizeText(element.textContent).includes(targetText));
+    }
+
     function isUnavailablePage() {
         const bodyText = normalizeText(document.body ? document.body.innerText : "");
         return unavailableSnippets.some(snippet => bodyText.includes(normalizeText(snippet)));
@@ -64,6 +153,7 @@
             return;
         }
 
+        stopReadyRefreshObserver();
         processingCompleted = true;
         currentStep = "completed";
         lastDonePayload = {
@@ -77,11 +167,19 @@
     }
 
     function collectUiState() {
+        const requestVisible = Boolean(findButtonByText(requestText));
+        const unfollowVisible = Boolean(findButtonByText(unfollowText));
+        const followVisible = Boolean(findButtonByText(followText) || findButtonContainingText(followText));
+
         return {
-            requestVisible: Boolean(findButtonByText(requestText)),
-            followVisible: Boolean(findButtonByText(followText)),
-            unfollowVisible: Boolean(findButtonByText(unfollowText))
+            requestVisible,
+            followVisible,
+            unfollowVisible
         };
+    }
+
+    function hasActionableUiState(uiState = collectUiState()) {
+        return Boolean(uiState.requestVisible || uiState.followVisible || uiState.unfollowVisible);
     }
 
     function updateProcessingStep(step) {
@@ -112,7 +210,9 @@
             readyState: document.readyState,
             navigationAgeMs: Math.round(performance.now()),
             primaryButtonVisible: uiState.requestVisible || uiState.unfollowVisible,
-            secondaryButtonVisible: uiState.unfollowVisible || uiState.followVisible
+            secondaryButtonVisible: uiState.unfollowVisible || uiState.followVisible,
+            shouldSkipClickDelay: uiState.followVisible && !uiState.requestVisible && !uiState.unfollowVisible,
+            uiState
         };
     }
 
@@ -229,6 +329,9 @@
             } else {
                 if (buttonText === requestText) {
                     let followBtn = findButtonByText(followText);
+                    if (!followBtn) {
+                        followBtn = findButtonContainingText(followText);
+                    }
                     if (followBtn) {
                         log("Profile already unfollowed (follow button found). Reporting done.");
                         reportDone({
@@ -306,7 +409,7 @@
             
             let currentStatus = "bilinmiyor";
             const requestBtn = findButtonByText(requestText);
-            const followBtn = findButtonByText(followText);
+            const followBtn = findButtonByText(followText) || findButtonContainingText(followText);
             const unfollowBtn = findButtonByText(unfollowText);
             
             if (requestBtn) {
@@ -366,6 +469,7 @@
         try {
             if (!processingStarted) {
                 processingStarted = true;
+                stopReadyRefreshObserver();
                 updateProcessingStep("started");
             }
 

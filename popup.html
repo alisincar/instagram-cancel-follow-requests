@@ -203,6 +203,17 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
+    .legal-note {
+      flex-shrink: 0;
+      padding: 0.42rem 0.8rem 0.5rem 0.8rem;
+      background: rgba(255, 251, 235, 0.92);
+      border-top: 1px solid rgba(253, 230, 138, 0.7);
+      color: #92400e;
+      font-size: 0.6rem;
+      line-height: 1.35;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -394,6 +405,10 @@
     <div class="log-container" id="log"></div>
     <button class="btn btn-stop" id="btn-stop" data-i18n="btnStop">🛑 DURDUR</button>
     <button class="btn" id="btn-return" style="display:none; background:#475569; margin-top:0.4rem; color:white; font-weight:600;" data-i18n="btnReturn">🏠 ANA EKRANA DÖN</button>
+  </div>
+
+  <div class="legal-note" data-i18n="legalDisclaimer">
+    Sorumluluk reddi: Bu eklenti oldugu gibi sunulur. Yapilan islemler ve olasi hesap veya platform sonuclari tamamen kullanicinin sorumlulugundadir. Gelistirici hicbir sorumluluk kabul etmez.
   </div>
 
   <div class="promo-footer">

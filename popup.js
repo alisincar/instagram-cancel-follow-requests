@@ -67,6 +67,7 @@
             logHistory: "Log History",
             btnReturn: "🏠 RETURN HOME",
             btnLogs: "📜 LOGS",
+            legalDisclaimer: "Disclaimer: This extension is provided as-is. All actions and any account or platform consequences are solely the user's responsibility. The developer accepts no liability.",
             promoMozaredTitle: "Mozared",
             promoMozaredSubtitle: "Events & Dating",
             promoRandevuTitle: "Appointment Service",
@@ -126,6 +127,7 @@
             logHistory: "Historial de logs",
             btnReturn: "🏠 VOLVER AL INICIO",
             btnLogs: "📜 LOGS",
+            legalDisclaimer: "Aviso legal: Esta extension se proporciona tal cual. Todas las acciones y cualquier consecuencia sobre la cuenta o la plataforma son responsabilidad exclusiva del usuario. El desarrollador no asume ninguna responsabilidad.",
             promoMozaredTitle: "Mozared",
             promoMozaredSubtitle: "Eventos y Citas",
             promoRandevuTitle: "Servicio de Citas",
@@ -198,6 +200,7 @@
             logHistory: "Log-Verlauf",
             btnReturn: "🏠 ZUR STARTSEITE",
             btnLogs: "📜 LOGS",
+            legalDisclaimer: "Haftungsausschluss: Diese Erweiterung wird wie besehen bereitgestellt. Alle Aktionen und etwaige Konto- oder Plattformfolgen liegen ausschließlich in der Verantwortung des Nutzers. Der Entwickler übernimmt keine Haftung.",
             promoMozaredTitle: "Mozared",
             promoMozaredSubtitle: "Events und Dating",
             promoRandevuTitle: "Terminservice",
@@ -270,6 +273,7 @@
             logHistory: "लॉग इतिहास",
             btnReturn: "🏠 होम पर लौटें",
             btnLogs: "📜 लॉग्स",
+            legalDisclaimer: "अस्वीकरण: यह एक्सटेंशन जैसी है वैसी ही प्रदान की जाती है। सभी कार्रवाइयां और खाते या प्लेटफ़ॉर्म से जुड़ी किसी भी प्रकार की परिणतियां पूरी तरह उपयोगकर्ता की जिम्मेदारी हैं। डेवलपर कोई जिम्मेदारी स्वीकार नहीं करता।",
             promoMozaredTitle: "Mozared",
             promoMozaredSubtitle: "इवेंट्स और डेटिंग",
             promoRandevuTitle: "अपॉइंटमेंट सर्विस",
@@ -355,6 +359,7 @@
             logHistory: "Log Geçmişi",
             btnReturn: "🏠 ANA EKRANA DÖN",
             btnLogs: "📜 LOG'LAR",
+            legalDisclaimer: "Sorumluluk reddi: Bu eklenti oldugu gibi sunulur. Yapilan islemler ve olasi hesap veya platform sonuclari tamamen kullanicinin sorumlulugundadir. Gelistirici hicbir sorumluluk kabul etmez.",
             promoMozaredTitle: "Mozared",
             promoMozaredSubtitle: "Etkinlik ve Arkadaslik",
             promoRandevuTitle: "Randevu Servisi",
@@ -640,6 +645,31 @@
         logScrollState.set(container, true);
     }
 
+    function captureLogScrollSnapshot(container) {
+        if (!container) {
+            return null;
+        }
+
+        return {
+            follow: shouldFollowLog(container),
+            distanceFromBottom: Math.max(0, container.scrollHeight - container.clientHeight - container.scrollTop)
+        };
+    }
+
+    function restoreLogScrollSnapshot(container, snapshot) {
+        if (!container || !snapshot) {
+            return;
+        }
+
+        if (snapshot.follow) {
+            scrollLogToBottom(container);
+            return;
+        }
+
+        container.scrollTop = Math.max(0, container.scrollHeight - container.clientHeight - snapshot.distanceFromBottom);
+        rememberLogScrollState(container);
+    }
+
     function bindLogScrollTracking(container) {
         if (!container || container.dataset.logScrollBound === '1') {
             return;
@@ -795,6 +825,8 @@
     }
 
     function renderLogs(logs) {
+        const mainSnapshot = captureLogScrollSnapshot(logDiv);
+        const accSnapshot = captureLogScrollSnapshot(accLogContent);
         cachedLogs = Array.isArray(logs) ? logs.slice() : [];
         logDiv.innerHTML = '';
         if (accLogContent) {
@@ -802,12 +834,16 @@
         }
 
         cachedLogs.forEach(message => {
-            appendLogToContainer(logDiv, message);
-            appendLogToContainer(accLogContent, message);
+            if (logDiv) {
+                logDiv.appendChild(createLogEntryNode(message));
+            }
+            if (accLogContent) {
+                accLogContent.appendChild(createLogEntryNode(message));
+            }
         });
 
-        scrollLogToBottom(logDiv);
-        scrollLogToBottom(accLogContent);
+        restoreLogScrollSnapshot(logDiv, mainSnapshot);
+        restoreLogScrollSnapshot(accLogContent, accSnapshot);
 
         setHomeLogButtonVisibility();
     }
