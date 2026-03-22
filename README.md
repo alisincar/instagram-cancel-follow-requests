@@ -82,9 +82,9 @@ This extension is provided as-is. Any action performed with it, and any resultin
 
 This project is connected to the broader product and software work of our team:
 
-- [Mozared](https://mozared.com) for product, community, and platform initiatives
+- [Mozared](https://mozared.com) as an event and socializing app
 - [Mozared Online](https://mozared.online) as our software company and development studio
-- [MeetupExpress](https://meetupexpress.com) for related event and growth-focused product work
+- [MeetupExpress](https://meetupexpress.com) as a business management platform focused on appointment management for companies
 
 ## Support
 
