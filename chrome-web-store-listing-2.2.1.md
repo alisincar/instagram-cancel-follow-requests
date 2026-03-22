@@ -1,13 +1,15 @@
 # Chrome Web Store Listing - 2.2.1
 
 ## Name
-Unfollow Manager (Sequential & Control)
+Instagram Unfollower & Pending Request Canceler
 
 ## Short Description
-Cancels pending Instagram follow requests one by one with logs, recovery, and controlled background flow.
+Efficiently cancel pending Instagram follow requests and unfollow profiles automatically with human-like delays. Bulk management tool.
 
 ## Detailed Description
-Unfollow Manager is a Chrome extension built to cancel pending Instagram follow requests one by one in a controlled and sequential flow.
+Instagram Unfollower & Pending Request Canceler is your ultimate cleaning tool for Instagram. Manage your account activity by automatically canceling pending follow requests and unfollowing non-followers in a controlled way.
+
+Avoid manual clicking! This extension handles massive lists profile-by-profile with built-in delays to mimic human behavior.
 
 This release focuses on stability, visibility, and long-run control instead of raw speed.
 
@@ -69,6 +71,18 @@ The extension only runs on `instagram.com` and its subdomains.
 
 ## Release Notes
 Version 2.2.1 focuses on reducing unnecessary waiting, improving already-resolved profile detection, and making live log review easier during long sessions.
+
+## Keywords
+- Instagram Unfollower
+- Cancel Pending Request
+- Bulk Unfollow
+- Instagram Helper
+- Auto Cancel Request
+- Instagram Clean
+- Auto Unfollow
+- Controlled Human-like Delays
+- Manage Following
+- Instagram Automation
 
 ## Alternative Short Description
 Controlled Instagram pending-request cancellation with logs, recovery, memory, and background processing support.
