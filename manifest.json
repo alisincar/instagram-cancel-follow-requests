@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Instagram Unfollower & Pending Request Canceler",
   "short_name": "IG Unfollow & Cancel",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Easily cancel pending Instagram follow requests and unfollow profiles automatically. Bulk management tool with human-like delays.",
   "permissions": [
     "scripting",
