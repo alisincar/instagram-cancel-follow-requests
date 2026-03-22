@@ -19,6 +19,8 @@ const bgDict = {
     createFail: "Sekme açılamadı. Aynı profil tekrar denenecek:",
     retrying: "🔁 Yeniden deneme",
     retryLimit: "⛔ Maksimum tekrar deneme aşıldı. İşlem durduruldu:",
+    unavailableSkip: "⚠️ Sayfaya erişilemedi. Profil atlandı:",
+    stalledSkip: "⚠️ Profil zaman aşımına uğradı. Atlanıyor:",
     mBg: "Arka Plan",
     mFg: "Yeni Sekme",
     mOto: "Oto",
@@ -44,6 +46,8 @@ const bgDict = {
     createFail: "Tab could not be opened. Retrying the same profile:",
     retrying: "🔁 Retrying",
     retryLimit: "⛔ Maximum retries reached. Process stopped:",
+    unavailableSkip: "⚠️ Page unavailable. Profile skipped:",
+    stalledSkip: "⚠️ Profile timed out. Skipping:",
     mBg: "Hidden",
     mFg: "New Tab",
     mOto: "Auto",
@@ -69,6 +73,8 @@ const bgDict = {
     createFail: "No se pudo abrir la pestaña. Reintentando el mismo perfil:",
     retrying: "🔁 Reintentando",
     retryLimit: "⛔ Se alcanzó el máximo de reintentos. Proceso detenido:",
+    unavailableSkip: "⚠️ Página no disponible. Perfil omitido:",
+    stalledSkip: "⚠️ El perfil excedió el tiempo de espera. Omitiendo:",
     mBg: "Oculto",
     mFg: "Pestaña",
     mOto: "Auto",
@@ -94,6 +100,8 @@ const bgDict = {
     createFail: "Tab konnte nicht geöffnet werden. Dasselbe Profil wird erneut versucht:",
     retrying: "🔁 Neuer Versuch",
     retryLimit: "⛔ Maximale Wiederholungen erreicht. Prozess gestoppt:",
+    unavailableSkip: "⚠️ Seite nicht verfügbar. Profil wurde übersprungen:",
+    stalledSkip: "⚠️ Zeitüberschreitung beim Profil. Es wird übersprungen:",
     mBg: "Versteckt",
     mFg: "Neuer Tab",
     mOto: "Auto",
@@ -119,6 +127,8 @@ const bgDict = {
     createFail: "टैब नहीं खुला। उसी प्रोफ़ाइल को फिर से आजमाया जाएगा:",
     retrying: "🔁 फिर से प्रयास",
     retryLimit: "⛔ अधिकतम पुनः प्रयास पूरे हुए। प्रक्रिया रोक दी गई:",
+    unavailableSkip: "⚠️ पेज उपलब्ध नहीं है। प्रोफ़ाइल छोड़ी गई:",
+    stalledSkip: "⚠️ प्रोफ़ाइल टाइमआउट हो गई। छोड़ा जा रहा है:",
     mBg: "छिपा",
     mFg: "टैब",
     mOto: "ऑटो",
@@ -377,6 +387,17 @@ function normalizeProfileUrls(urls) {
       .map(url => normalizeProfileUrl(url))
       .filter(Boolean)
   )];
+}
+
+function buildProfileInfoFromUrl(url, currentStatus = "bilinmiyor") {
+  const normalizedUrl = normalizeProfileUrl(url);
+  const username = normalizedUrl ? normalizedUrl.split("/").pop() : null;
+
+  return {
+    username,
+    profileUrl: normalizedUrl || url || null,
+    currentStatus
+  };
 }
 
 function sanitizeRuntimeState(rawState) {
@@ -996,6 +1017,18 @@ async function moveToNextProfile(reason, profileInfo = null, options = {}) {
   await scheduleTabDelay();
 }
 
+async function skipCurrentProfile(reason, logMessage, profileInfo = null) {
+  const fallbackProfileInfo = profileInfo || buildProfileInfoFromUrl(state.currentProcessingUrl || currentQueueUrl());
+  const profileUrl = normalizeProfileUrl(fallbackProfileInfo?.profileUrl || state.currentProcessingUrl || currentQueueUrl()) || fallbackProfileInfo?.profileUrl || "-";
+
+  if (logMessage) {
+    await addLog(`${logMessage} ${profileUrl}`);
+  }
+
+  await updateCurrentProcessingStep("completed");
+  await moveToNextProfile(reason, fallbackProfileInfo);
+}
+
 async function haltWithRetryLimit(reason, retryUrl) {
   await addLog(`${t.retryLimit} ${retryUrl || "-"}`);
 
@@ -1145,6 +1178,15 @@ async function syncCurrentProcessingTab() {
       await moveToNextProfile(
         sync.lastDonePayload?.resolvedReason || "recovered_done",
         sync.lastDonePayload?.profileInfo || sync.profileInfo || null
+      );
+      return;
+    }
+
+    if (sync?.pageUnavailable) {
+      await skipCurrentProfile(
+        "page_unavailable",
+        t.unavailableSkip,
+        sync.profileInfo || buildProfileInfoFromUrl(state.currentProcessingUrl, "erişilemiyor")
       );
       return;
     }
@@ -1309,22 +1351,13 @@ chrome.alarms.onAlarm.addListener(alarm => {
       }
 
       const stalledUrl = state.currentProcessingUrl;
-      const stalledTabId = state.currentProcessingTab;
       const stalledStep = state.currentProcessingStep || "started";
 
-      await addLog(`⚠️ Yarım kalan işlem tespit edildi. Aynı profil yeniden denenecek (${stalledStep}): ${stalledUrl}`);
-
-      if (stalledTabId !== null) {
-        state.currentProcessingTab = null;
-        await persistRuntimeState();
-        try {
-          await chrome.tabs.remove(stalledTabId);
-        } catch (error) {
-          // Ignore tab close errors during watchdog recovery.
-        }
-      }
-
-      await retryCurrentProfile("stalled_partial_processing", stalledUrl);
+      await skipCurrentProfile(
+        "stalled_timeout",
+        `${t.stalledSkip} (${stalledStep}):`,
+        buildProfileInfoFromUrl(stalledUrl, "zaman_asimi")
+      );
       return;
     }
 
@@ -1442,6 +1475,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           readyUiState?.followVisible ||
           readyUiState?.unfollowVisible
         );
+
+        if (msg.readySignal?.pageUnavailable) {
+          if (["uiReady", "clickDelay"].includes(state.waitingReason)) {
+            clickDelayScheduledTabId = null;
+            await clearWaitingState();
+          }
+
+          await skipCurrentProfile(
+            "page_unavailable",
+            t.unavailableSkip,
+            buildProfileInfoFromUrl(state.currentProcessingUrl, "erişilemiyor")
+          );
+          sendResponse({ ok: true });
+          return;
+        }
+
         const shouldSkipAlreadyUnfollowed = Boolean(
           msg.readySignal?.shouldSkipClickDelay ||
           (

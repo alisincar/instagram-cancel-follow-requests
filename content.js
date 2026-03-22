@@ -212,6 +212,7 @@
             primaryButtonVisible: uiState.requestVisible || uiState.unfollowVisible,
             secondaryButtonVisible: uiState.unfollowVisible || uiState.followVisible,
             shouldSkipClickDelay: uiState.followVisible && !uiState.requestVisible && !uiState.unfollowVisible,
+            pageUnavailable: isUnavailablePage(),
             uiState
         };
     }
@@ -533,6 +534,7 @@
                 completed: processingCompleted,
                 lastDonePayload: lastDonePayload,
                 currentStep: currentStep,
+                pageUnavailable: isUnavailablePage(),
                 uiState: collectUiState(),
                 profileInfo: cachedProfileInfo,
                 url: window.location.href
