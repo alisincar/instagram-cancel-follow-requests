@@ -1,6 +1,6 @@
-# Instagram Unfollower & Pending Request Canceler
+# IG Unfollower & Pending Request Canceler
 
-Instagram Unfollower & Pending Request Canceler is a Chrome extension for processing pending Instagram follow requests in a controlled, sequential flow.
+IG Unfollower & Pending Request Canceler is a Chrome extension for processing pending IG follow requests in a controlled, sequential flow.
 
 It is built for long lists, visibility during runtime, and controlled session management than a naive bulk-click approach.
 
@@ -27,7 +27,7 @@ The goal is control first, not blind speed.
 ## Core Flow
 
 1. Open the extension popup.
-2. Read profile URLs from Instagram or load an exported list.
+2. Read profile URLs from IG or load an exported list.
 3. Start automatic processing in visible or background mode.
 4. Monitor progress and logs at any time from the popup.
 
@@ -68,11 +68,11 @@ Generated archives are written to the `release/` directory.
 
 ## Permissions
 
-- `scripting`: used for page checks and interactions on Instagram
+- `scripting`: used for page checks and interactions on IG
 - `tabs`: used to open, monitor, and close processing tabs
 - `storage`: used for settings, logs, progress, and memory
 - `alarms`: used for pacing, retries, and recovery timing
-- `activeTab`: used to start extraction from the current Instagram tab
+- `activeTab`: used to start extraction from the current IG tab
 
 ## Disclaimer
 
